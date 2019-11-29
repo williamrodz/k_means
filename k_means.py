@@ -5,10 +5,11 @@
 from random import seed
 from random import randint
 from matplotlib import pyplot as plt
+import sys
 
 x_range = 100
 y_range = 100
-num_points = 50
+num_points = 100
 
 seed(1)
 points = []
@@ -26,11 +27,15 @@ plt.show()
 
 
 # randomly choose k centers
-k = 5
+print(sys.argv)
+if len(sys.argv) >= 2:
+  k = int(sys.argv[1])
+else:
+  k = 3
 
 centers = []
 seed(1)
-while len(centers) != k:
+while len(centers) < k:
   center_i = randint(0,len(points))
   if points[center_i] not in centers:
     centers.append(points[center_i])
@@ -80,7 +85,7 @@ def plot_points(points_to_centers,centers_colors,title="Points"):
   plt.suptitle(title)
   plt.show()
 
-plot_points(points_to_centers,centers_colors)
+plot_points(points_to_centers,centers_colors,title="First centers")
 
 
 
@@ -113,11 +118,14 @@ def reassign_centers(points_to_centers):
 
 
 def get_wcss(points_to_centers):
-  wcss = 0
-  for point in points_to_centers:
-    wss = distance(point,points_to_centers[point])**2
-    wcss+=wss
-  return wcss
+    """
+    WCSS : Within Cluster Sum of Squares
+    """
+    wcss = 0
+    for point in points_to_centers:
+        wss = distance(point,points_to_centers[point])**2
+        wcss+=wss
+    return wcss
 
 get_wcss(points_to_centers)
 
