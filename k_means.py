@@ -1,4 +1,4 @@
-# K means
+# K means algorithm
 
 
 # Get Data
@@ -7,8 +7,14 @@ from random import randint
 from matplotlib import pyplot as plt
 import sys
 
+# Constants
+DEFAULT_K = 3
+
 
 def get_default_data():
+	"""
+	Generates list of tuples of random two dimensional data within defined ranges
+	"""
 	seed(1)
 	x_range = 100
 	y_range = 100
@@ -26,9 +32,12 @@ def get_default_data():
 	plt.show()
 	return points
 
-# assign colors to each center
+
 def assign_colors(centers):
-	# assign colors to each center
+	"""
+	Given a list or dictionary of centers (represented as tuples), returns a dictionary
+	mapping these centers to colors
+	"""
 	colors  = ["red","green","blue","yellow","purple"]
 	if type(centers) == dict:
 		centers_colors = {list(centers.keys())[i]:colors[i] for i in range(len(centers.keys()))}
@@ -38,26 +47,38 @@ def assign_colors(centers):
 	return centers_colors
 
 
+def euclidean_distance(point1,point2):
+	"""
+	Returns the euclidean distance from one point to another
+	"""
+	num_dimensions = min(len(point1),len(point2))
+	squared_differences = 0
+	for dimension in range(num_dimensions):
+		squared_differences += (point1[dimension] - point2[dimension]) **2
 
-def distance(point1,point2):
-	return ((point1[0] - point2[0]) **2 + (point1[1] - point2[1])**2)**0.5
-
+	sqrt = squared_differences ** 0.5
+	return sqrt
 
 def reassign_points_to_center(points,centers_colors):
-	# assign each point to a center
+	"""
+	Given a list of points (represented as tuples) and a mapping of centers to their colors,
+	returns a dictionary mapping each point to its closest center
+	"""
 	points_to_centers = {}
 	for point in points:
 	# determine distance to each cluster
 		min_distance = float("infinity")
 		for center in centers_colors:
-			local_distance = distance(point,center)**2
+			local_distance = euclidean_distance(point,center)**2
 			if local_distance < min_distance:
 				min_distance = local_distance
 				points_to_centers[point] = center
 	return points_to_centers
 
-
 def plot_points(points_to_centers,centers_colors,title="Points"):
+	"""
+	Plots each point with a color corresponding to its assigned center
+	"""
 	x = [point[0] for point in points_to_centers]
 	y = [point[1] for point in points_to_centers]
 	colors = []
@@ -70,23 +91,31 @@ def plot_points(points_to_centers,centers_colors,title="Points"):
 	plt.show()
 
 
+def get_cluster_averages(clusters):
+	"""
+	Given a dictionary of centers to lists of their assigned points,
+	calculates the average point in these clusters, and returns
+	a list of these new cluster centers
 
-
-def get_average(clusters):
+	"""
 	new_centers = []
 	for center in clusters:
-		x_vals = [point[0] for point in clusters[center]]
-		y_vals = [point[1] for point in clusters[center]]
-		x_average = sum(x_vals)/len(x_vals)
-		y_average = sum(y_vals)/len(y_vals)
-		new_center = (x_average,y_average)
+		new_center = tuple()
+		for dimension in range(len(center)):
+			dimension_vals = [point[dimension] for point in clusters[center]]
+			average = sum(dimension_vals)/len(dimension_vals)
+			new_center += (average,)
 		new_centers.append(new_center)
 
 	return new_centers
 
-
-
 def reassign_centers(points_to_centers):
+	"""
+	Provided a mapping of points to their assigned center point,
+	calculates the average point for each center point and then 
+	returns these newly calculated centers as mapping of centers
+	to colors
+	"""
 	clusters = {}
 	for point in points_to_centers:
 		center = points_to_centers[point]
@@ -95,7 +124,7 @@ def reassign_centers(points_to_centers):
 		else:
 			clusters[center].append(point)
 	# reassign centers
-	centers = get_average(clusters)
+	centers = get_cluster_averages(clusters)
 	centers_colors = assign_colors(centers)
 	return centers_colors
 
@@ -103,25 +132,26 @@ def reassign_centers(points_to_centers):
 def get_wcss(points_to_centers):
 	"""
 	WCSS : Within Cluster Sum of Squares
+	Returns the total WCSS according to given points_to_center mappings
 	"""
 	wcss = 0
 	for point in points_to_centers:
-		wss = distance(point,points_to_centers[point])**2
+		wss = euclidean_distance(point,points_to_centers[point])**2
 		wcss+=wss
 	return wcss
 
 # optimize
-def run_k_means(max_iterations=100):
+def run_k_means(k,max_iterations=100):
+	"""
+	Runs the k-means algorithm, with a specified k and limit of optimization steps
+	The algorithm will stop when either the cluster centers do no longer change or
+	the number of max iterations is reached- whichever comes first 
+	"""
 
 	# get data
 	points = get_default_data()
 
 	# randomly choose k centers
-	if len(sys.argv) >= 2:
-		k = int(sys.argv[1])
-	else:
-		k = 3
-
 	centers = []
 	seed(1)
 	while len(centers) < k:
@@ -139,20 +169,25 @@ def run_k_means(max_iterations=100):
 		points_to_centers = reassign_points_to_center(points,centers_colors)
 		if i == 0:
 			points_to_centers
-			plot_points(points_to_centers,centers_colors,title="First centers")		
+			plot_points(points_to_centers,centers_colors,title="Random centers")		
 		centers_colors = reassign_centers(points_to_centers)
 		local_wcss = get_wcss(points_to_centers)
-		print("WCSS Error:",local_wcss)
+		print(f"Iteration {i} WCSS Error:{local_wcss}")
 		if len(wcss) > 0 and wcss[-1] == local_wcss:
 			break
 		wcss.append(local_wcss)
 
-
-
-
 	plt.plot(range(len(wcss)),wcss)
 	plt.suptitle("Within Cluster Squared Error")
 	plt.show()
-	plot_points(points_to_centers,centers_colors,title="Final clusters")
+	plot_points(points_to_centers,centers_colors,title="Final clusters and centers")
+	final_wcss = wcss[-1]
+	return final_wcss
 
-run_k_means()
+if __name__ == "__main__":
+	if len(sys.argv) >= 2:
+		k = int(sys.argv[1])
+	else:
+		k = DEFAULT_K
+
+	run_k_means(k)
