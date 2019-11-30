@@ -79,14 +79,34 @@ def plot_points(points_to_centers,centers_colors,title="Points"):
 	"""
 	Plots each point with a color corresponding to its assigned center
 	"""
-	x = [point[0] for point in points_to_centers]
-	y = [point[1] for point in points_to_centers]
+	num_dimensions = len(points_to_centers[list(points_to_centers.keys())[0]])
+
+	points_dimension_values = [] # [[x1,x2,x3,], [y1,y2,y3], [z1,z2,z3]....]
+	centers_dimension_values = []
+
+	for dimension in range(num_dimensions):
+		this_dimension_point_values = [point[dimension] for point in points_to_centers]
+		points_dimension_values.append(this_dimension_point_values)
+
+		this_dimension_center_values = [point[dimension] for point in centers_colors]
+		centers_dimension_values.append(this_dimension_center_values)
+
+
 	colors = []
 	for point in points_to_centers:
 		corresponding_center = points_to_centers[point]
 		colors.append(centers_colors[corresponding_center])
-	plt.scatter(x,y,edgecolors=colors,facecolors='none')
-	plt.scatter([p[0] for p in centers_colors],[p[1] for p in centers_colors],marker="s",c=list(centers_colors.values()))
+	if num_dimensions == 2:
+		plt.scatter(points_dimension_values[0],points_dimension_values[1],edgecolors=colors,facecolors='none')
+		plt.scatter(centers_dimension_values[0],centers_dimension_values[1],marker="s",c=list(centers_colors.values()))
+
+	elif num_dimensions == 3:
+		plt.scatter(points_dimension_values[0],points_dimension_values[1],points_dimension_values[2],edgecolors=colors,facecolors='none')
+		plt.scatter(centers_dimension_values[0],centers_dimension_values[1],centers_dimension_values[2],marker="s",c=list(centers_colors.values()))
+
+	else:
+		raise NotImplementedError("Four or more dimensional points not supported yet")
+
 	plt.suptitle(title)
 	plt.show()
 
