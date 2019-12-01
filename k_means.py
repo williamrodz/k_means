@@ -10,7 +10,6 @@ import sys
 # Constants
 DEFAULT_K = 3
 
-
 def get_default_data():
 	"""
 	Generates list of tuples of random two dimensional data within defined ranges
@@ -32,7 +31,6 @@ def get_default_data():
 	plt.show()
 	return points
 
-
 def assign_colors(centers):
 	"""
 	Given a list or dictionary of centers (represented as tuples), returns a dictionary
@@ -45,7 +43,6 @@ def assign_colors(centers):
 		centers_colors = {centers[i]:colors[i] for i in range(len(centers))}
 
 	return centers_colors
-
 
 def euclidean_distance(point1,point2):
 	"""
@@ -91,7 +88,6 @@ def plot_points(points_to_centers,centers_colors,title="Points"):
 		this_dimension_center_values = [point[dimension] for point in centers_colors]
 		centers_dimension_values.append(this_dimension_center_values)
 
-
 	colors = []
 	for point in points_to_centers:
 		corresponding_center = points_to_centers[point]
@@ -105,11 +101,10 @@ def plot_points(points_to_centers,centers_colors,title="Points"):
 		plt.scatter(centers_dimension_values[0],centers_dimension_values[1],centers_dimension_values[2],marker="s",c=list(centers_colors.values()))
 
 	else:
-		raise NotImplementedError("Four or more dimensional points not supported yet")
+		print("Will not graph points: data vectors have more than 3 dimensions")
 
 	plt.suptitle(title)
 	plt.show()
-
 
 def get_cluster_averages(clusters):
 	"""
@@ -148,7 +143,6 @@ def reassign_centers(points_to_centers):
 	centers_colors = assign_colors(centers)
 	return centers_colors
 
-
 def get_wcss(points_to_centers):
 	"""
 	WCSS : Within Cluster Sum of Squares
@@ -160,7 +154,6 @@ def get_wcss(points_to_centers):
 		wcss+=wss
 	return wcss
 
-# optimize
 def run_k_means(k,max_iterations=100):
 	"""
 	Runs the k-means algorithm, with a specified k and limit of optimization steps
