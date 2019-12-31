@@ -11,8 +11,9 @@ import re
 
 # Constants
 DEFAULT_K = 3
+MAX_K_ELBOW = 10
 
-def get_default_data(num_points=100,dimensions=2):
+def get_default_data(num_points=100,dimensions=2,illustrate=True):
 	"""
 	Generates list of tuples of random two dimensional data within defined ranges
 	"""
@@ -25,11 +26,12 @@ def get_default_data(num_points=100,dimensions=2):
 		  point += (randint(range_of_values[0],range_of_values[1]),)
 	  points.append(point)
 
-	plt.scatter([point[0] for point in points], [point[1] for point in points])
-	plt.title('Random points')
-	plt.xlabel('x')
-	plt.ylabel('y')
-	plt.show()
+	if illustrate:
+		plt.scatter([point[0] for point in points], [point[1] for point in points])
+		plt.title('Random points')
+		plt.xlabel('x')
+		plt.ylabel('y')
+		plt.show()
 	return points
 
 def assign_colors(centers):
@@ -37,7 +39,7 @@ def assign_colors(centers):
 	Given a list or dictionary of centers (represented as tuples), returns a dictionary
 	mapping these centers to colors
 	"""
-	colors  = ["red","green","blue","yellow","purple"]
+	colors  = ["red","green","blue","yellow","purple","orange","pink","black","magenta","cyan"]
 	if type(centers) == dict:
 		centers_colors = {list(centers.keys())[i]:colors[i] for i in range(len(centers.keys()))}
 	else:
@@ -172,19 +174,34 @@ def extract_points_from_csv(filename):
 		print(f'Processed {line_count} lines.')
 	return data_rows
 
+def elbow_method(points):
+	errors = []
+	max_diff = 0
+	best_k = 1
+	for k in range(1,MAX_K_ELBOW+1):
+		error_k = run_k_means(k,points,illustrate=False)
+		if len(errors) > 1:
+			diff = (errors[-1]-error_k)
+			if diff > max_diff:
+				max_diff = diff
+				best_k = k
 
-def run_k_means(k,max_iterations=100,csvfilename=None):
+		errors.append(error_k)
+	print(f"Best k seems to be {best_k} according to elbow method")
+
+	plt.plot(range(1,MAX_K_ELBOW+1),errors)
+	plt.xlabel("K value")
+	plt.ylabel("errors")
+	plt.title("Elbow method")
+	plt.show()
+
+
+def run_k_means(k,points,max_iterations=100,illustrate=True):
 	"""
 	Runs the k-means algorithm, with a specified k and limit of optimization steps
 	The algorithm will stop when either the cluster centers do no longer change or
 	the number of max iterations is reached- whichever comes first
 	"""
-
-	# get data
-	if csvfilename and '.csv' in csvfilename:
-		points = extract_points_from_csv(csvfilename)
-	else:
-		points = get_default_data(dimensions=3)
 
 	# randomly choose k centers
 	centers = []
@@ -203,8 +220,8 @@ def run_k_means(k,max_iterations=100,csvfilename=None):
 
 		points_to_centers = reassign_points_to_center(points,centers_colors)
 		if i == 0:
-			points_to_centers
-			plot_points(points_to_centers,centers_colors,title="Random centers")
+			if illustrate:
+				plot_points(points_to_centers,centers_colors,title="Random centers")
 		centers_colors = reassign_centers(points_to_centers)
 		local_wcss = get_wcss(points_to_centers)
 		print(f"Iteration {i} WCSS Error:{local_wcss}")
@@ -212,10 +229,11 @@ def run_k_means(k,max_iterations=100,csvfilename=None):
 			break
 		wcss.append(local_wcss)
 
-	plt.plot(range(len(wcss)),wcss)
-	plt.suptitle("Within Cluster Squared Error")
-	plt.show()
-	plot_points(points_to_centers,centers_colors,title="Final clusters and centers")
+	if illustrate:
+		plt.plot(range(len(wcss)),wcss)
+		plt.suptitle("Within Cluster Squared Error")
+		plt.show()
+		plot_points(points_to_centers,centers_colors,title="Final clusters and centers")
 	final_wcss = wcss[-1]
 	return final_wcss
 
@@ -228,7 +246,7 @@ if __name__ == "__main__":
 
 	num_arguments = len(sys.argv)
 	filename = None
-	k = DEFAULT_K	
+	k = None	
 	for arg_i in range(len(sys.argv)):
 
 		if arg_i > 0:
@@ -238,4 +256,13 @@ if __name__ == "__main__":
 			elif re.match(r'.+\.csv',argument):
 				filename = argument
 
-	run_k_means(k,csvfilename=filename)
+	# get data
+	if filename:
+		points = extract_points_from_csv(filename)
+	else:
+		points = get_default_data(dimensions=2)				
+	
+	if k:
+		run_k_means(k,points)
+	else:
+		elbow_method(points)
