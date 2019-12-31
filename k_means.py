@@ -6,22 +6,23 @@ from random import seed
 from random import randint
 from matplotlib import pyplot as plt
 import sys
+import csv
+import re
 
 # Constants
 DEFAULT_K = 3
 
-def get_default_data():
+def get_default_data(num_points=100,dimensions=2):
 	"""
 	Generates list of tuples of random two dimensional data within defined ranges
 	"""
 	seed(1)
-	x_range = 100
-	y_range = 100
-	num_points = 100
-
+	range_of_values = (0,100)
 	points = []
 	for i in range(num_points):
-	  point = (randint(0,x_range),randint(0,y_range))
+	  point = tuple()
+	  for dimension in range(dimensions):
+		  point += (randint(range_of_values[0],range_of_values[1]),)
 	  points.append(point)
 
 	plt.scatter([point[0] for point in points], [point[1] for point in points])
@@ -127,7 +128,7 @@ def get_cluster_averages(clusters):
 def reassign_centers(points_to_centers):
 	"""
 	Provided a mapping of points to their assigned center point,
-	calculates the average point for each center point and then 
+	calculates the average point for each center point and then
 	returns these newly calculated centers as mapping of centers
 	to colors
 	"""
@@ -154,15 +155,36 @@ def get_wcss(points_to_centers):
 		wcss+=wss
 	return wcss
 
-def run_k_means(k,max_iterations=100):
+def extract_points_from_csv(filename):
+	print("Extracting custom data from csv")
+	data_rows = []
+	with open(filename) as csv_file:
+		csv_reader = csv.reader(csv_file, delimiter=',')
+		line_count = 0
+		for row in csv_reader:
+			if line_count == 0:
+				print(f'Column names are {", ".join(row)}')
+				line_count += 1
+			else:
+				floated_row = tuple(float(cell) for cell in row)
+				data_rows.append(floated_row)
+				line_count += 1
+		print(f'Processed {line_count} lines.')
+	return data_rows
+
+
+def run_k_means(k,max_iterations=100,csvfilename=None):
 	"""
 	Runs the k-means algorithm, with a specified k and limit of optimization steps
 	The algorithm will stop when either the cluster centers do no longer change or
-	the number of max iterations is reached- whichever comes first 
+	the number of max iterations is reached- whichever comes first
 	"""
 
 	# get data
-	points = get_default_data()
+	if csvfilename and '.csv' in csvfilename:
+		points = extract_points_from_csv(csvfilename)
+	else:
+		points = get_default_data(dimensions=3)
 
 	# randomly choose k centers
 	centers = []
@@ -182,7 +204,7 @@ def run_k_means(k,max_iterations=100):
 		points_to_centers = reassign_points_to_center(points,centers_colors)
 		if i == 0:
 			points_to_centers
-			plot_points(points_to_centers,centers_colors,title="Random centers")		
+			plot_points(points_to_centers,centers_colors,title="Random centers")
 		centers_colors = reassign_centers(points_to_centers)
 		local_wcss = get_wcss(points_to_centers)
 		print(f"Iteration {i} WCSS Error:{local_wcss}")
@@ -198,9 +220,22 @@ def run_k_means(k,max_iterations=100):
 	return final_wcss
 
 if __name__ == "__main__":
-	if len(sys.argv) >= 2:
-		k = int(sys.argv[1])
-	else:
-		k = DEFAULT_K
 
-	run_k_means(k)
+	# arguments usage
+	# python3 k_means.py NUMBER : showing demo with custom k
+	# ..      ..         FILENAME : custom data and optimal k finding
+	# ..      ..         FILENAME NUMBER : custom data and desired k
+
+	num_arguments = len(sys.argv)
+	filename = None
+	k = DEFAULT_K	
+	for arg_i in range(len(sys.argv)):
+
+		if arg_i > 0:
+			argument = sys.argv[arg_i]
+			if re.match(r'[0-9]+',argument):
+				k = int(argument)
+			elif re.match(r'.+\.csv',argument):
+				filename = argument
+
+	run_k_means(k,csvfilename=filename)
