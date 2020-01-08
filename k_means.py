@@ -179,8 +179,8 @@ def elbow_method(points):
 	max_diff = 0
 	best_k = 1
 	for k in range(1,MAX_K_ELBOW+1):
-		error_k = run_k_means(k,points,illustrate=False)
-		if len(errors) > 1:
+		error_k = run_k_means(k,points,illustrate=False)['final_error']
+		if len(errors) >= 1:
 			diff = (errors[-1]-error_k)
 			if diff > max_diff:
 				max_diff = diff
@@ -194,6 +194,7 @@ def elbow_method(points):
 	plt.ylabel("errors")
 	plt.title("Elbow method")
 	plt.show()
+	return best_k
 
 
 def run_k_means(k,points,max_iterations=100,illustrate=True):
@@ -235,7 +236,7 @@ def run_k_means(k,points,max_iterations=100,illustrate=True):
 		plt.show()
 		plot_points(points_to_centers,centers_colors,title="Final clusters and centers")
 	final_wcss = wcss[-1]
-	return final_wcss
+	return {"final_error":final_wcss,"centers":list(centers_colors.keys())}
 
 if __name__ == "__main__":
 
@@ -246,7 +247,7 @@ if __name__ == "__main__":
 
 	num_arguments = len(sys.argv)
 	filename = None
-	k = None	
+	k = None
 	for arg_i in range(len(sys.argv)):
 
 		if arg_i > 0:
@@ -260,8 +261,8 @@ if __name__ == "__main__":
 	if filename:
 		points = extract_points_from_csv(filename)
 	else:
-		points = get_default_data(dimensions=2)				
-	
+		points = get_default_data(dimensions=2)
+
 	if k:
 		run_k_means(k,points)
 	else:
